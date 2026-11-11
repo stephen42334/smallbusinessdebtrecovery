@@ -48,6 +48,13 @@ export const debtTypes = ["Commercial debt (e.g. unpaid invoice)", "Consumer deb
 export const amountBands = ["Under $5,000", "$5,000 – $20,000", "$20,000 – $50,000", "$50,000 – $100,000", "Over $100,000"] as const;
 export const overdueBands = ["Under 30 days", "30 – 60 days", "61 – 90 days", "3 – 6 months", "6 – 12 months", "Over 12 months"] as const;
 
+export const debtorTypes = ["Business / company", "Individual / sole trader", "Both / not sure"] as const;
+export const debtorCounts = ["1", "2 – 5", "6 – 20", "Over 20"] as const;
+export const debtorStates = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT", "Not sure"] as const;
+export const invoiceTermsOptions = ["Due on receipt", "7 days", "14 days", "30 days", "30 days end of month", "60 days or more", "Progress payments / milestones", "No written terms", "Other"] as const;
+export const disputeOptions = ["No – the debtor has not disputed it", "Yes – the debtor disputes some or all of it", "Not sure"] as const;
+export const actionOptions = ["Nothing yet", "Reminders / follow-up calls", "Letter of demand sent", "Payment plan or part payments made", "Already with another agency or solicitor"] as const;
+
 export const faqs = [
   { q: "What types of debt can you help with?", a: "We handle eligible commercial and consumer debt matters. The suitability of a particular debt depends on its circumstances and whether it falls within our services." },
   { q: "Do you work with construction and trades businesses?", a: "Construction and trades businesses are an important audience for our services. If you have an overdue invoice or another outstanding commercial debt, contact us to discuss it." },

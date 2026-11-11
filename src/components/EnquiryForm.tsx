@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { CheckCircle2, Loader2, Lock, TriangleAlert } from "lucide-react";
-import { amountBands, debtTypes, overdueBands, phoneLabel, site } from "@/config/site";
+import { actionOptions, amountBands, debtorCounts, debtorStates, debtorTypes, debtTypes, disputeOptions, invoiceTermsOptions, overdueBands, phoneLabel, site } from "@/config/site";
 import { cleanEnquiry, validateEnquiry, type FieldErrors } from "@/lib/validation";
 import { track } from "@/lib/analytics";
 
@@ -95,6 +95,28 @@ export function EnquiryForm() {
           <Field id="overdue" label="How long has it been overdue?" required error={errors.overdue}>
             <select id="overdue" name="overdue" defaultValue="" className={input} {...aria("overdue")}><option value="" disabled>Select…</option>{overdueBands.map((d) => <option key={d}>{d}</option>)}</select>
           </Field>
+        </div>
+        <Field id="debtorType" label="Who owes the debt?" required error={errors.debtorType}>
+          <select id="debtorType" name="debtorType" defaultValue="" className={input} {...aria("debtorType")}><option value="" disabled={true}>Select…</option>{debtorTypes.map((d) => <option key={d}>{d}</option>)}</select>
+        </Field>
+        <Field id="debtorState" label="Debtor’s state or territory" required error={errors.debtorState}>
+          <select id="debtorState" name="debtorState" defaultValue="" className={input} {...aria("debtorState")}><option value="" disabled={true}>Select…</option>{debtorStates.map((d) => <option key={d}>{d}</option>)}</select>
+        </Field>
+        <Field id="invoiceTerms" label="Payment terms on your invoice" required error={errors.invoiceTerms}>
+          <select id="invoiceTerms" name="invoiceTerms" defaultValue="" className={input} {...aria("invoiceTerms")}><option value="" disabled={true}>Select…</option>{invoiceTermsOptions.map((d) => <option key={d}>{d}</option>)}</select>
+        </Field>
+        <Field id="debtorCount" label="Number of debtors" error={errors.debtorCount}>
+          <select id="debtorCount" name="debtorCount" defaultValue="" className={input} {...aria("debtorCount")}><option value="" disabled={false}>Select (optional)…</option>{debtorCounts.map((d) => <option key={d}>{d}</option>)}</select>
+        </Field>
+        <div className="sm:col-span-2">
+        <Field id="disputed" label="Has the debtor disputed the debt?" required error={errors.disputed}>
+          <select id="disputed" name="disputed" defaultValue="" className={input} {...aria("disputed")}><option value="" disabled={true}>Select…</option>{disputeOptions.map((d) => <option key={d}>{d}</option>)}</select>
+        </Field>
+        </div>
+        <div className="sm:col-span-2">
+        <Field id="actionTaken" label="What have you done so far?" error={errors.actionTaken}>
+          <select id="actionTaken" name="actionTaken" defaultValue="" className={input} {...aria("actionTaken")}><option value="" disabled={false}>Select (optional)…</option>{actionOptions.map((d) => <option key={d}>{d}</option>)}</select>
+        </Field>
         </div>
         <div className="sm:col-span-2">
           <Field id="description" label="Brief description" error={errors.description}>

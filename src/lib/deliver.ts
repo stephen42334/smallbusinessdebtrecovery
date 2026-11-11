@@ -16,7 +16,9 @@ export async function deliverEnquiry(d: EnquiryInput): Promise<DeliveryResult> {
     names.push("email");
     const rows: [string, string][] = [
       ["Name", d.fullName], ["Business", d.businessName || "—"], ["Phone", d.phone], ["Email", d.email],
-      ["Debt type", d.debtType], ["Amount owed", d.amount], ["Overdue", d.overdue], ["Description", d.description || "—"],
+      ["Debt type", d.debtType], ["Amount owed", d.amount], ["Overdue", d.overdue],
+      ["Debtor type", d.debtorType], ["Number of debtors", d.debtorCount || "—"], ["Debtor state", d.debtorState],
+      ["Invoice terms", d.invoiceTerms], ["Disputed", d.disputed], ["Action so far", d.actionTaken || "—"], ["Description", d.description || "—"],
     ];
     const html = `<h2>New debt recovery enquiry</h2><table cellpadding="6" style="border-collapse:collapse;font-family:sans-serif">${rows
       .map(([k, v]) => `<tr><td style="border:1px solid #ddd"><b>${k}</b></td><td style="border:1px solid #ddd;white-space:pre-wrap">${esc(v)}</td></tr>`).join("")}</table><p>Consent to be contacted: yes</p>`;

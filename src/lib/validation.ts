@@ -1,8 +1,9 @@
-import { amountBands, debtTypes, overdueBands } from "@/config/site";
+import { actionOptions, amountBands, debtorCounts, debtorStates, debtorTypes, debtTypes, disputeOptions, invoiceTermsOptions, overdueBands } from "@/config/site";
 
 export type EnquiryInput = {
   fullName: string; businessName: string; phone: string; email: string;
-  debtType: string; amount: string; overdue: string; description: string; consent: boolean;
+  debtType: string; amount: string; overdue: string; debtorType: string; debtorCount: string; debtorState: string;
+  invoiceTerms: string; disputed: string; actionTaken: string; description: string; consent: boolean;
 };
 export type FieldErrors = Partial<Record<keyof EnquiryInput, string>>;
 
@@ -27,6 +28,12 @@ export function cleanEnquiry(raw: Record<string, unknown>): EnquiryInput {
     debtType: sanitize(raw.debtType, 80),
     amount: sanitize(raw.amount, 40),
     overdue: sanitize(raw.overdue, 40),
+    debtorType: sanitize(raw.debtorType, 40),
+    debtorCount: sanitize(raw.debtorCount, 20),
+    debtorState: sanitize(raw.debtorState, 20),
+    invoiceTerms: sanitize(raw.invoiceTerms, 60),
+    disputed: sanitize(raw.disputed, 80),
+    actionTaken: sanitize(raw.actionTaken, 80),
     description: sanitize(raw.description, 1500, true),
     consent: raw.consent === true || raw.consent === "true" || raw.consent === "on",
   };
@@ -41,6 +48,12 @@ export function validateEnquiry(d: EnquiryInput): FieldErrors {
   if (!(debtTypes as readonly string[]).includes(d.debtType)) e.debtType = "Please select the type of debt.";
   if (!(amountBands as readonly string[]).includes(d.amount)) e.amount = "Please select the approximate amount owed.";
   if (!(overdueBands as readonly string[]).includes(d.overdue)) e.overdue = "Please select how long it has been overdue.";
+  if (!(debtorTypes as readonly string[]).includes(d.debtorType)) e.debtorType = "Please select who owes the debt.";
+  if (d.debtorCount && !(debtorCounts as readonly string[]).includes(d.debtorCount)) e.debtorCount = "Please select a valid option.";
+  if (!(debtorStates as readonly string[]).includes(d.debtorState)) e.debtorState = "Please select where the debtor is located.";
+  if (!(invoiceTermsOptions as readonly string[]).includes(d.invoiceTerms)) e.invoiceTerms = "Please select the payment terms on your invoice.";
+  if (!(disputeOptions as readonly string[]).includes(d.disputed)) e.disputed = "Please tell us whether the debt is disputed.";
+  if (d.actionTaken && !(actionOptions as readonly string[]).includes(d.actionTaken)) e.actionTaken = "Please select a valid option.";
   if (!d.consent) e.consent = "Please confirm you consent to us contacting you about this enquiry.";
   return e;
 }
