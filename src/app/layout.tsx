@@ -4,14 +4,14 @@ import { site } from "@/config/site";
 import { Analytics } from "@/components/Analytics";
 
 const indexable = process.env.ALLOW_INDEXING === "true";
-const title = "Debt Recovery Australia | Commercial & Consumer Debt Recovery";
-const description = `Need help with overdue invoices or outstanding debts? Discuss commercial and consumer debt recovery options with ${site.agencyName}.`;
+const title = "Builder Not Paying? Debt Recovery for NSW Tradies & Subcontractors";
+const description = `Owed money by a builder or head contractor? ${site.agencyName} helps NSW tradies and subcontractors pursue unpaid invoices and progress claims. Commission-based.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.siteUrl),
   title,
   description,
-  keywords: ["debt recovery Australia", "commercial debt recovery", "consumer debt recovery", "debt collection services", "recover unpaid invoices", "construction debt recovery", "debt recovery for tradies", "unpaid invoices Australia"],
+  keywords: ["builder not paying", "subcontractor unpaid invoice NSW", "debt recovery for tradies NSW", "construction debt recovery NSW", "security of payment NSW", "recover unpaid invoices", "unpaid progress claim", "head contractor not paying subcontractor"],
   alternates: { canonical: "/" },
   robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
   openGraph: { type: "website", locale: "en_AU", title, description, siteName: site.agencyName, url: "/" },

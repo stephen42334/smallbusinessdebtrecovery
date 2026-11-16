@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import { CheckCircle2, Loader2, Lock, TriangleAlert } from "lucide-react";
-import { amountBands, debtTypes, overdueBands, phoneLabel, site } from "@/config/site";
+import { actionOptions, amountBands, debtorRoles, disputeOptions, jobLocations, licenceOptions, overdueBands, paperworkOptions, paymentClaimOptions, phoneLabel, site, trades, workStatuses } from "@/config/site";
 import { cleanEnquiry, validateEnquiry, type FieldErrors } from "@/lib/validation";
 import { track } from "@/lib/analytics";
 
@@ -28,6 +28,16 @@ export function EnquiryForm() {
 
   const aria = (k: keyof FieldErrors) => ({ "aria-invalid": errors[k] ? true : undefined, "aria-describedby": errors[k] ? `${k}-err` : undefined } as const);
 
+  const sel = (id: keyof FieldErrors, label: string, options: readonly string[], required: boolean, hint?: string) => (
+    <Field id={id} label={label} required={required} error={errors[id]}>
+      {hint && <p className="mb-1 text-xs text-slate-500">{hint}</p>}
+      <select id={id} name={id} defaultValue="" className={input} {...aria(id)}>
+        <option value="" disabled={required}>{required ? "Select…" : "Select (optional)…"}</option>
+        {options.map((o) => <option key={o}>{o}</option>)}
+      </select>
+    </Field>
+  );
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -46,7 +56,7 @@ export function EnquiryForm() {
       const res = await fetch("/api/enquiry", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...raw, startedAt: renderedAt.current }) });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok === true) {
-        setDevFallback(data.devFallback === true); setStatus("success"); track("form_submit", { debt_type: String(raw.debtType) });
+        setDevFallback(data.devFallback === true); setStatus("success"); track("form_submit", { debtor_role: String(raw.debtorRole), trade: String(raw.trade) });
       } else {
         if (data.fieldErrors) { setErrors(data.fieldErrors); track("form_validation_failure", { fields: Object.keys(data.fieldErrors).join(","), source: "server" }); }
         setStatus("error"); setMessage(data.error || "Something went wrong. Please try again or call us.");
@@ -72,8 +82,8 @@ export function EnquiryForm() {
   return (
     <form id="enquiry-form" onSubmit={onSubmit} noValidate onFocus={() => { if (!started.current) { started.current = true; track("form_start"); } }}
           className="rounded-xl bg-white p-5 shadow-2xl sm:p-7" aria-labelledby="form-title">
-      <h2 id="form-title" className="text-xl font-extrabold text-navy">Discuss your outstanding debt</h2>
-      <p className="mt-1 text-sm text-slate-600">Takes about two minutes. Fields marked * are required.</p>
+      <h2 id="form-title" className="text-xl font-extrabold text-navy">Tell us about the unpaid invoice</h2>
+      <p className="mt-1 text-sm text-slate-600">Takes about three minutes. Fields marked * are required.</p>
 
       {/* Honeypot – hidden from people and assistive tech */}
       <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
@@ -85,20 +95,20 @@ export function EnquiryForm() {
         <Field id="businessName" label="Business name" error={errors.businessName}><input id="businessName" name="businessName" autoComplete="organization" className={input} /></Field>
         <Field id="phone" label="Phone number" required error={errors.phone}><input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0412 345 678" className={input} {...aria("phone")} /></Field>
         <Field id="email" label="Email address" required error={errors.email}><input id="email" name="email" type="email" autoComplete="email" className={input} {...aria("email")} /></Field>
-        <Field id="debtType" label="Type of debt" required error={errors.debtType}>
-          <select id="debtType" name="debtType" defaultValue="" className={input} {...aria("debtType")}><option value="" disabled>Select…</option>{debtTypes.map((d) => <option key={d}>{d}</option>)}</select>
-        </Field>
-        <Field id="amount" label="Approximate amount owed" required error={errors.amount}>
-          <select id="amount" name="amount" defaultValue="" className={input} {...aria("amount")}><option value="" disabled>Select…</option>{amountBands.map((d) => <option key={d}>{d}</option>)}</select>
-        </Field>
-        <div className="sm:col-span-2">
-          <Field id="overdue" label="How long has it been overdue?" required error={errors.overdue}>
-            <select id="overdue" name="overdue" defaultValue="" className={input} {...aria("overdue")}><option value="" disabled>Select…</option>{overdueBands.map((d) => <option key={d}>{d}</option>)}</select>
-          </Field>
-        </div>
+        {sel("trade", "Your trade", trades, true)}
+        {sel("debtorRole", "Who hasn’t paid you?", debtorRoles, true)}
+        {sel("amount", "Approximate amount owed", amountBands, true)}
+        {sel("overdue", "How long has it been overdue?", overdueBands, true)}
+        {sel("workStatus", "Where is the work at?", workStatuses, true)}
+        {sel("paperwork", "What do you have in writing?", paperworkOptions, true)}
+        <div className="sm:col-span-2">{sel("paymentClaim", "Have you sent a formal payment claim under the NSW Security of Payment Act?", paymentClaimOptions, true, "Time limits can apply, so if you’re not sure, say so and we’ll talk it through. Have the dates of your invoices and claims handy.")}</div>
+        {sel("jobLocation", "Where is the job?", jobLocations, true)}
+        {sel("disputed", "Has the debtor disputed the amount?", disputeOptions, true)}
+        {sel("actionTaken", "What have you done so far?", actionOptions, false)}
+        {sel("licence", "Do you hold the NSW licence for this work?", licenceOptions, false)}
         <div className="sm:col-span-2">
           <Field id="description" label="Brief description" error={errors.description}>
-            <textarea id="description" name="description" rows={3} maxLength={1500} placeholder="What was the work or service, and what has happened so far?" className={input} />
+            <textarea id="description" name="description" rows={3} maxLength={1500} placeholder="What was the job, who is the builder or customer, and what has happened since you sent the invoice?" className={input} />
           </Field>
         </div>
       </div>
@@ -117,7 +127,7 @@ export function EnquiryForm() {
 
       <button type="submit" disabled={status === "submitting"}
         className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-accent px-6 py-3.5 text-base font-bold tracking-wide text-black transition-colors hover:bg-accent-dark disabled:opacity-70">
-        {status === "submitting" ? <><Loader2 className="animate-spin" size={18} aria-hidden />SENDING…</> : "DISCUSS YOUR OUTSTANDING DEBT"}
+        {status === "submitting" ? <><Loader2 className="animate-spin" size={18} aria-hidden />SENDING…</> : "DISCUSS YOUR UNPAID INVOICE"}
       </button>
       <p className="mt-3 flex items-start gap-2 text-xs text-slate-600"><Lock size={14} className="mt-0.5 shrink-0" aria-hidden />Your details are used only to respond to this enquiry and are not sold or shared for marketing. Please don’t include bank or card details.</p>
     </form>
