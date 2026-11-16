@@ -33,36 +33,39 @@ export const trustBlocks: TrustBlock[] = [
   { id: "experience", title: "Relevant debt recovery experience", icon: "briefcase",
     content: "[EDITABLE PLACEHOLDER – describe verified debt recovery experience. Do not state years or figures unless verified.]" },
   { id: "industries", title: "Industries and debt types handled", icon: "hardhat",
-    content: "[EDITABLE PLACEHOLDER – list the industries and debt types you genuinely handle.]" },
+    content: "[EDITABLE PLACEHOLDER – describe the trades and construction debt you genuinely handle in NSW (e.g. subcontractor claims against builders).]" },
   { id: "credentials", title: "Professional memberships and credentials", icon: "badge",
     content: "[EDITABLE PLACEHOLDER – list real memberships / licences with registration numbers. Display none until verified.]" },
   { id: "coverage", title: "Geographic service coverage", icon: "map",
-    content: "[EDITABLE PLACEHOLDER – states/territories actually serviced.]" },
+    content: "[EDITABLE PLACEHOLDER – confirm NSW coverage once your licensing position is confirmed.]" },
   { id: "communication", title: "Client communication and updates", icon: "message",
     content: "[EDITABLE PLACEHOLDER – describe how and how often clients receive updates, once the process is confirmed.]" },
   { id: "testimonials", title: "Genuine testimonials and case studies", icon: "quote",
     content: "[EDITABLE PLACEHOLDER – add only real, consented client testimonials or case studies.]" },
 ];
 
-export const debtTypes = ["Commercial debt (e.g. unpaid invoice)", "Consumer debt", "Not sure"] as const;
-export const amountBands = ["Under $5,000", "$5,000 – $20,000", "$20,000 – $50,000", "$50,000 – $100,000", "Over $100,000"] as const;
-export const overdueBands = ["Under 30 days", "30 – 60 days", "61 – 90 days", "3 – 6 months", "6 – 12 months", "Over 12 months"] as const;
-
-export const debtorTypes = ["Business / company", "Individual / sole trader", "Both / not sure"] as const;
-export const debtorCounts = ["1", "2 – 5", "6 – 20", "Over 20"] as const;
-export const debtorStates = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT", "Not sure"] as const;
-export const invoiceTermsOptions = ["Due on receipt", "7 days", "14 days", "30 days", "30 days end of month", "60 days or more", "Progress payments / milestones", "No written terms", "Other"] as const;
-export const disputeOptions = ["No – the debtor has not disputed it", "Yes – the debtor disputes some or all of it", "Not sure"] as const;
-export const actionOptions = ["Nothing yet", "Reminders / follow-up calls", "Letter of demand sent", "Payment plan or part payments made", "Already with another agency or solicitor"] as const;
+// Enquiry form options. Built for NSW tradies chasing builders; the server validates against these exact lists.
+export const trades = ["Carpentry / framing", "Concreting", "Plumbing / drainage", "Electrical", "Roofing", "Bricklaying / masonry", "Painting", "Plastering / rendering", "Tiling / waterproofing", "Landscaping", "Air-conditioning / HVAC", "Earthworks / civil", "Other trade"] as const;
+export const debtorRoles = ["Builder / head contractor", "Developer or property owner company", "Another business", "Homeowner (lives or will live there)", "Not sure"] as const;
+export const amountBands = ["Under $2,500", "$2,500 – $10,000", "$10,000 – $25,000", "$25,000 – $50,000", "$50,000 – $100,000", "Over $100,000"] as const;
+export const overdueBands = ["Not yet due", "Under 30 days", "30 – 60 days", "61 – 90 days", "3 – 6 months", "6 – 12 months", "Over 12 months"] as const;
+export const workStatuses = ["Finished the work", "Still working on the job", "Stopped or left the job"] as const;
+export const paperworkOptions = ["Signed contract or subcontract", "Accepted quote or purchase order", "Emails or texts only", "Nothing in writing"] as const;
+export const paymentClaimOptions = ["Yes – they replied", "Yes – no reply", "No", "Not sure what that is"] as const;
+export const jobLocations = ["New South Wales", "Outside NSW (we’ll tell you if we can help)"] as const;
+export const disputeOptions = ["No – they haven’t disputed it", "Yes – they dispute some or all of it", "Not sure"] as const;
+export const actionOptions = ["Nothing yet", "Reminders / follow-up calls", "Letter of demand sent", "Part payments or a promise to pay", "Already with another agency or solicitor"] as const;
+export const licenceOptions = ["Yes", "No", "The work doesn’t need a licence", "Not sure"] as const;
 
 export const faqs = [
-  { q: "What types of debt can you help with?", a: "We handle eligible commercial and consumer debt matters. The suitability of a particular debt depends on its circumstances and whether it falls within our services." },
-  { q: "Do you work with construction and trades businesses?", a: "Construction and trades businesses are an important audience for our services. If you have an overdue invoice or another outstanding commercial debt, contact us to discuss it." },
-  { q: "How much does debt recovery cost?", a: "Our pricing is based on commission on recovered debt. The applicable rate and any additional fees or expenses will be explained before you enter into an agreement." },
-  { q: "Do I pay if the debt is not recovered?", a: "This depends on the agreed terms and any applicable fees or expenses. We’ll explain exactly what applies before you proceed." },
-  { q: "How long does debt recovery take?", a: "There is no single timeframe that applies to every debt. It depends on factors such as the debtor’s response, whether the debt is disputed and whether further action is required." },
-  { q: "What if the debtor disputes the amount?", a: "A disputed debt may require additional assessment and potentially legal advice. We’ll explain the options available and any relevant referral process." },
-  { q: "Can you arrange legal action?", a: "Where appropriate, we can explain the legal referral pathway. Any legal work is subject to arrangements with the relevant legal professional and the circumstances of the matter." },
-  { q: "What information should I provide?", a: "Start with the amount owed, the payment due date, the debtor’s details and a brief explanation of the circumstances." },
-  { q: "How do I get started?", a: `Call ${phoneLabel} or complete the enquiry form on this page. We’ll discuss your situation and explain the next steps.` },
+  { q: "I’m a tradie and a builder hasn’t paid me. Can you help?", a: "That’s who we built this for. Tell us what happened using the form. We’ll review the details and tell you plainly whether we can help and what your options look like." },
+  { q: "The builder says “pay when paid”. Does that mean I have to wait?", a: "Not necessarily. Whether you have to wait depends on your contract and the law. We’ll look at what you signed and explain your options. For a legal view, a construction lawyer is the right person, and we can refer you to an independent legal professional." },
+  { q: "What is Security of Payment in NSW?", a: "It’s NSW law that gives eligible construction contractors a faster way to claim progress payments, with short and strict time limits. We can explain in general terms how it may apply to your job. We don’t provide legal advice, and where a legal step is needed we refer you to an independent legal professional." },
+  { q: "Does this work if the debtor is a homeowner?", a: "Sometimes. Homeowner debts are assessed case by case, and different rules can apply. Tell us the details and we’ll say whether we can help." },
+  { q: "What paperwork should I gather?", a: "Your contract, subcontract or accepted quote, any variations, invoices and payment claims with the dates you sent them, emails and texts with the builder, and photos or sign-off showing the work was done. Don’t worry if some of it is missing." },
+  { q: "How much does it cost?", a: "Our pricing is based on commission on recovered debt. The applicable rate and any additional fees or expenses will be explained before you enter into an agreement." },
+  { q: "Do I pay if nothing is recovered?", a: "This depends on the agreed terms and any applicable fees or expenses. We’ll explain exactly what applies before you proceed." },
+  { q: "Should I act quickly?", a: "Yes. Time limits can apply to a claim, and they can be short in NSW. If you’re unsure, enquire early and tell us the dates of your invoices and claims." },
+  { q: "How long does recovery take?", a: "There is no single timeframe. It depends on the debtor’s response, whether the debt is disputed and whether further action is needed." },
+  { q: "How do I get started?", a: `Call ${phoneLabel} or complete the enquiry form on this page. We’ll talk through your situation and explain the next steps.` },
 ];

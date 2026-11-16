@@ -17,7 +17,7 @@ npm run lint                 # type-check
 |---|---|
 | Agency name, phone, email, ABN, service area, links | env vars `NEXT_PUBLIC_*` (see `.env.example`) → `src/config/site.ts` |
 | "Why choose us" blocks (all **placeholders**) | `trustBlocks` in `src/config/site.ts` |
-| FAQ copy, form dropdown options | `src/config/site.ts` |
+| FAQ copy, form dropdown options (trades, debtor type, claim status, etc.) | `src/config/site.ts` |
 | Section copy | `src/components/Sections.tsx` |
 | Photos | drop `problem.jpg` and/or `cta.jpg` (jpg/jpeg/webp/png) into `public/images/` – picked up automatically at build. Use **real** construction/trades photos you have rights to. |
 
@@ -70,3 +70,10 @@ curl https://<your-domain>/api/health
 7. Imagery – no photography included; add real photos (see above).
 8. Whether the 3-second-minimum / rate-limit / consent wording suits your needs; consider Cloudflare Turnstile if spam grows.
 9. Rate limiter is in-memory (single instance); use Redis if scaled horizontally.
+
+## Positioning (NSW tradies owed by builders)
+Copy and the enquiry form target NSW tradies and subcontractors chasing builders and head contractors. Extra items to have a lawyer review before launch:
+* Every mention of the NSW **Security of Payment** rules and time limits (copy is deliberately general; it must not read as legal advice or promise an outcome).
+* The logo tagline "No Collection | No Commission": only keep it if your client contract matches it exactly.
+* The form asks whether the tradie holds the NSW licence for the work: confirm how you will use that answer.
+* Collecting from homeowners is described as "assessed case by case": confirm whether you will take consumer debts at all.

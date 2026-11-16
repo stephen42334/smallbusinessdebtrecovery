@@ -11,7 +11,7 @@ export function JsonLd() {
     { "@context": "https://schema.org", "@type": "WebSite", name: site.agencyName, url: site.siteUrl, inLanguage: "en-AU" },
     {
       "@context": "https://schema.org", "@type": "Service", name: "Debt recovery services",
-      serviceType: "Commercial and consumer debt recovery", areaServed: { "@type": "Country", name: "Australia" },
+      serviceType: "Debt recovery for tradies and subcontractors", areaServed: { "@type": "State", name: "New South Wales" },
       provider: { "@type": "Organization", name: site.agencyName, url: site.siteUrl },
     },
     {

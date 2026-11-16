@@ -1,9 +1,9 @@
-import { actionOptions, amountBands, debtorCounts, debtorStates, debtorTypes, debtTypes, disputeOptions, invoiceTermsOptions, overdueBands } from "@/config/site";
+import { actionOptions, amountBands, debtorRoles, disputeOptions, jobLocations, licenceOptions, overdueBands, paperworkOptions, paymentClaimOptions, trades, workStatuses } from "@/config/site";
 
 export type EnquiryInput = {
   fullName: string; businessName: string; phone: string; email: string;
-  debtType: string; amount: string; overdue: string; debtorType: string; debtorCount: string; debtorState: string;
-  invoiceTerms: string; disputed: string; actionTaken: string; description: string; consent: boolean;
+  trade: string; debtorRole: string; amount: string; overdue: string; workStatus: string; paperwork: string; paymentClaim: string;
+  jobLocation: string; disputed: string; actionTaken: string; licence: string; description: string; consent: boolean;
 };
 export type FieldErrors = Partial<Record<keyof EnquiryInput, string>>;
 
@@ -25,19 +25,23 @@ export function cleanEnquiry(raw: Record<string, unknown>): EnquiryInput {
     businessName: sanitize(raw.businessName, 120),
     phone: sanitize(raw.phone, 30),
     email: sanitize(raw.email, 254).toLowerCase(),
-    debtType: sanitize(raw.debtType, 80),
+    trade: sanitize(raw.trade, 60),
+    debtorRole: sanitize(raw.debtorRole, 60),
     amount: sanitize(raw.amount, 40),
     overdue: sanitize(raw.overdue, 40),
-    debtorType: sanitize(raw.debtorType, 40),
-    debtorCount: sanitize(raw.debtorCount, 20),
-    debtorState: sanitize(raw.debtorState, 20),
-    invoiceTerms: sanitize(raw.invoiceTerms, 60),
+    workStatus: sanitize(raw.workStatus, 60),
+    paperwork: sanitize(raw.paperwork, 60),
+    paymentClaim: sanitize(raw.paymentClaim, 60),
+    jobLocation: sanitize(raw.jobLocation, 80),
     disputed: sanitize(raw.disputed, 80),
     actionTaken: sanitize(raw.actionTaken, 80),
+    licence: sanitize(raw.licence, 60),
     description: sanitize(raw.description, 1500, true),
     consent: raw.consent === true || raw.consent === "true" || raw.consent === "on",
   };
 }
+
+const oneOf = (list: readonly string[], v: string) => list.includes(v);
 
 export function validateEnquiry(d: EnquiryInput): FieldErrors {
   const e: FieldErrors = {};
@@ -45,15 +49,17 @@ export function validateEnquiry(d: EnquiryInput): FieldErrors {
   if (!/^[+()\d\s-]{8,20}$/.test(d.phone) || d.phone.replace(/\D/g, "").length < 8)
     e.phone = "Please enter a valid phone number (e.g. 0412 345 678).";
   if (!EMAIL_RE.test(d.email)) e.email = "Please enter a valid email address.";
-  if (!(debtTypes as readonly string[]).includes(d.debtType)) e.debtType = "Please select the type of debt.";
-  if (!(amountBands as readonly string[]).includes(d.amount)) e.amount = "Please select the approximate amount owed.";
-  if (!(overdueBands as readonly string[]).includes(d.overdue)) e.overdue = "Please select how long it has been overdue.";
-  if (!(debtorTypes as readonly string[]).includes(d.debtorType)) e.debtorType = "Please select who owes the debt.";
-  if (d.debtorCount && !(debtorCounts as readonly string[]).includes(d.debtorCount)) e.debtorCount = "Please select a valid option.";
-  if (!(debtorStates as readonly string[]).includes(d.debtorState)) e.debtorState = "Please select where the debtor is located.";
-  if (!(invoiceTermsOptions as readonly string[]).includes(d.invoiceTerms)) e.invoiceTerms = "Please select the payment terms on your invoice.";
-  if (!(disputeOptions as readonly string[]).includes(d.disputed)) e.disputed = "Please tell us whether the debt is disputed.";
-  if (d.actionTaken && !(actionOptions as readonly string[]).includes(d.actionTaken)) e.actionTaken = "Please select a valid option.";
+  if (!oneOf(trades, d.trade)) e.trade = "Please select your trade.";
+  if (!oneOf(debtorRoles, d.debtorRole)) e.debtorRole = "Please tell us who hasn’t paid you.";
+  if (!oneOf(amountBands, d.amount)) e.amount = "Please select the approximate amount owed.";
+  if (!oneOf(overdueBands, d.overdue)) e.overdue = "Please select how long it has been overdue.";
+  if (!oneOf(workStatuses, d.workStatus)) e.workStatus = "Please tell us where the work is at.";
+  if (!oneOf(paperworkOptions, d.paperwork)) e.paperwork = "Please tell us what you have in writing.";
+  if (!oneOf(paymentClaimOptions, d.paymentClaim)) e.paymentClaim = "Please choose an option.";
+  if (!oneOf(jobLocations, d.jobLocation)) e.jobLocation = "Please tell us where the job is.";
+  if (!oneOf(disputeOptions, d.disputed)) e.disputed = "Please tell us whether the debt is disputed.";
+  if (d.actionTaken && !oneOf(actionOptions, d.actionTaken)) e.actionTaken = "Please select a valid option.";
+  if (d.licence && !oneOf(licenceOptions, d.licence)) e.licence = "Please select a valid option.";
   if (!d.consent) e.consent = "Please confirm you consent to us contacting you about this enquiry.";
   return e;
 }
