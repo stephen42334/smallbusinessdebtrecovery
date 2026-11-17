@@ -1,0 +1,86 @@
+name: Uptime and security checks
+
+# Every 5 minutes, from GitHub's servers (so it still works when Railway is down), check the website and the client portal.
+# A failure: turns this run red (GitHub emails you), opens an "outage" issue, and posts to ALERT_WEBHOOK_URL if you set that secret.
+# When everything is healthy again the issue is closed automatically.
+on:
+  schedule:
+    - cron: "*/5 * * * *"        # GitHub runs this on a best-effort basis: it can be several minutes late
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      LANDING_URL: ${{ vars.LANDING_URL }}
+      PORTAL_URL: ${{ vars.PORTAL_URL }}
+      LANDING_MARKER: ${{ vars.LANDING_MARKER }}
+      ALLOWED_SCRIPT_HOSTS: ${{ vars.ALLOWED_SCRIPT_HOSTS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the website and the portal
+        id: checks
+        run: node scripts/monitor.mjs --out result.json
+        continue-on-error: true
+
+      - name: Open an outage issue, or note that it is still failing
+        if: steps.checks.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          problems=$(node -e 'const r=require("./result.json"); console.log(r.problems.map(p=>"- "+p).join("\n"))')
+          critical=$(node -e 'console.log(require("./result.json").critical ? "POSSIBLE SECURITY PROBLEM: " : "")')
+          gh label create outage --color B60205 --description "Website or portal check failing" --force >/dev/null 2>&1 || true
+          existing=$(gh issue list --label outage --state open --json number --jq '.[0].number // empty')
+          body="${critical}The automatic checks are failing.
+
+          ${problems}
+
+          Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          First steps are in docs/ALERTS.md. This issue closes by itself when the checks pass again."
+          if [ -z "$existing" ]; then
+            gh issue create --title "${critical}Website or portal check failing" --label outage --body "$body"
+          elif [ "$(date -u +%M)" -lt 5 ]; then
+            gh issue comment "$existing" --body "Still failing at $(date -u +%H:%M) UTC:
+
+          ${problems}"
+          fi
+
+      - name: Send to your phone or chat (optional)
+        if: steps.checks.outcome == 'failure'
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          [ -z "$ALERT_WEBHOOK_URL" ] && { echo "No ALERT_WEBHOOK_URL secret set: skipping the webhook."; exit 0; }
+          text=$(node -e 'const r=require("./result.json"); console.log((r.critical?"POSSIBLE SECURITY PROBLEM. ":"")+"Website or portal check failing: "+r.problems.join(" | "))')
+          # a webhook failure must not hide the real alert
+          curl -sS --max-time 15 -X POST -H "Content-Type: application/json" \
+            -d "$(node -e 'console.log(JSON.stringify({event:"site_check_failed",text:process.argv[1],subject:"Site check failed",run:process.env.GITHUB_SERVER_URL+"/"+process.env.GITHUB_REPOSITORY+"/actions/runs/"+process.env.GITHUB_RUN_ID}))' "$text")" \
+            "$ALERT_WEBHOOK_URL" >/dev/null || echo "Webhook call failed."
+
+      - name: Close the outage issue now that everything is healthy
+        if: steps.checks.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label outage --state open --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Recovered at $(date -u +%H:%M) UTC: all checks passed."
+          done
+
+      - name: Turn this run red if a check failed
+        if: steps.checks.outcome == 'failure'
+        run: exit 1
