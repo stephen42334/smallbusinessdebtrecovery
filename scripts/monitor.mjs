@@ -2,7 +2,8 @@
 // Outside-in checks of the public website and the client portal. Run every 5 minutes by .github/workflows/uptime.yml (from GitHub's servers, so it still works
 // when Railway is down). Exits 1 if anything is wrong, and writes the failures to the file named by --out.
 //
-//   LANDING_URL, PORTAL_URL         the two sites (defaults below)
+//   LANDING_URL, PORTAL_URL         the two sites (defaults below; the website is checked at its www address)
+//   CHECK_APEX=true, APEX_URL       also check the bare domain (no www) once its DNS is set up
 //   LANDING_MARKER, PORTAL_MARKER   text each home page must contain: if a hacker replaces the page, or it errors, it won't
 //   ALLOWED_SCRIPT_HOSTS            hosts the website may load scripts from (comma separated)
 //   MIN_CERT_DAYS                   warn this many days before a TLS certificate expires (default 14)
@@ -10,7 +11,9 @@ import { writeFileSync, appendFileSync } from "node:fs";
 import tls from "node:tls";
 
 const env = (k, d) => (process.env[k] && process.env[k].trim() ? process.env[k].trim() : d);
-const LANDING = env("LANDING_URL", "https://smallbuisnessdebtrecovery.com").replace(/\/$/, "");
+const LANDING = env("LANDING_URL", "https://www.smallbuisnessdebtrecovery.com").replace(/\/$/, "");
+const APEX = env("APEX_URL", "https://smallbuisnessdebtrecovery.com").replace(/\/$/, "");
+const CHECK_APEX = env("CHECK_APEX", "false").toLowerCase() === "true";   // switch on once the bare domain's DNS is set up
 const PORTAL = env("PORTAL_URL", "https://portal.smallbuisnessdebtrecovery.com").replace(/\/$/, "");
 const LANDING_MARKER = env("LANDING_MARKER", "Builder not paying");
 const PORTAL_MARKER = env("PORTAL_MARKER", "Small Business Debt Recovery");
@@ -55,6 +58,10 @@ export function integrityProblems(html, ownHost, allowed = ALLOWED_HOSTS) {
   return problems;
 }
 
+/** A real finding from a page that DID answer (a missing security header, an open private page, an injected script). Only these are reported as a possible
+ *  security problem: a site that cannot be reached at all is an outage, not evidence of tampering. */
+class Evidence extends Error {}
+
 const checks = [];
 const check = (name, fn, { critical = false } = {}) => checks.push({ name, fn, critical });
 
@@ -62,13 +69,18 @@ const check = (name, fn, { critical = false } = {}) => checks.push({ name, fn, c
 check("Website: health endpoint", async () => { const r = await get(`${LANDING}/api/health`); if (r.status !== 200 || !/"status"\s*:\s*"ok"/.test(r.body)) throw new Error(`HTTP ${r.status}`); });
 check("Website: home page loads with the expected content", async () => {
   const r = await get(`${LANDING}/`); if (r.status !== 200) throw new Error(`HTTP ${r.status}`);
-  if (!r.body.toLowerCase().includes(LANDING_MARKER.toLowerCase())) throw new Error(`the page no longer contains "${LANDING_MARKER}" (replaced, or an error page)`);
+  if (!r.body.toLowerCase().includes(LANDING_MARKER.toLowerCase())) throw new Evidence(`the page no longer contains "${LANDING_MARKER}" (replaced, or an error page)`);
   if (r.ms > SLOW_MS) throw new Error(`very slow (${r.ms} ms)`);
 });
 check("Website: nothing unexpected loaded on the home page (tampering check)", async () => {
   const r = await get(`${LANDING}/`); const p = integrityProblems(r.body, host(LANDING));
-  if (p.length) throw new Error(p.join("; "));
+  if (p.length) throw new Evidence(p.join("; "));
 }, { critical: true });
+
+if (CHECK_APEX) check("Website: the bare domain (no www) also works", async () => {
+  const r = await get(`${APEX}/`);
+  if (!(r.status === 200 || (r.status >= 300 && r.status < 400))) throw new Error(`HTTP ${r.status}`);
+});
 
 // ---- the client portal
 check("Portal: health endpoint", async () => { const r = await get(`${PORTAL}/api/health`); if (r.status !== 200) throw new Error(`HTTP ${r.status}`); });
@@ -80,33 +92,36 @@ check("Portal: sign-in page loads", async () => {
 });
 check("Portal: security headers are present", async () => {
   const r = await get(`${PORTAL}/login`); const csp = r.headers.get("content-security-policy") ?? "";
-  if (!/default-src 'self'/.test(csp) || !/frame-ancestors 'none'/.test(csp)) throw new Error("the Content-Security-Policy header is missing or weaker than expected");
+  if (r.status >= 500 || r.status === 404) throw new Error(`the sign-in page did not load (HTTP ${r.status}), so its headers could not be checked`);   // an outage, not tampering
+  if (!/default-src 'self'/.test(csp) || !/frame-ancestors 'none'/.test(csp)) throw new Evidence("the Content-Security-Policy header is missing or weaker than expected");
 }, { critical: true });
 check("Portal: private pages still refuse anonymous visitors", async () => {
   for (const path of ["/admin", "/portal", "/admin/debts"]) {
     const r = await get(`${PORTAL}${path}`);
-    if (r.status < 300 || r.status >= 400 || !(r.headers.get("location") ?? "").includes("/login")) throw new Error(`${path} answered HTTP ${r.status} to an anonymous visitor instead of redirecting to sign-in`);
+    if (r.status >= 500 || r.status === 404) throw new Error(`${path} did not load (HTTP ${r.status})`);   // an outage, not tampering
+    if (r.status < 300 || r.status >= 400 || !(r.headers.get("location") ?? "").includes("/login")) throw new Evidence(`${path} answered HTTP ${r.status} to an anonymous visitor instead of redirecting to sign-in`);
   }
   for (const path of ["/api/admin/debts", "/api/portal/debts", "/api/portal/notifications"]) {
     const r = await get(`${PORTAL}${path}`);
-    if (r.status !== 401) throw new Error(`${path} answered HTTP ${r.status} to an anonymous caller (expected 401)`);
+    if (r.status >= 500 || r.status === 404) throw new Error(`${path} did not load (HTTP ${r.status})`);   // an outage, not tampering
+    if (r.status !== 401) throw new Evidence(`${path} answered HTTP ${r.status} to an anonymous caller (expected 401)`);
   }
 }, { critical: true });
 
 // ---- certificates
-for (const [label, url] of [["website", LANDING], ["portal", PORTAL]])
+for (const [label, url] of [["website", LANDING], ["portal", PORTAL], ...(CHECK_APEX ? [["bare domain", APEX]] : [])])
   check(`TLS certificate for the ${label} is not about to expire`, async () => { const d = await certDays(url); if (d !== null && d < MIN_CERT_DAYS) throw new Error(`expires in ${d} day(s)`); });
 
 async function runOnce({ name, fn }) {
-  let last;
-  for (let i = 1; i <= RETRIES; i++) { try { await fn(); return null; } catch (e) { last = e instanceof Error ? e.message : String(e); if (i < RETRIES) await sleep(RETRY_WAIT_MS); } }   // a single blip is not an outage
-  return `${name}: ${last}`;
+  let last, evidence = false;
+  for (let i = 1; i <= RETRIES; i++) { try { await fn(); return null; } catch (e) { last = e instanceof Error ? (e.cause?.code ? `${e.message} (${e.cause.code})` : e.message) : String(e); evidence = e instanceof Evidence; if (i < RETRIES) await sleep(RETRY_WAIT_MS); } }   // a single blip is not an outage
+  return { text: `${name}: ${last}`, evidence };
 }
 if (process.argv[1] && process.argv[1].endsWith("monitor.mjs")) {
   const results = await Promise.all(checks.map(async (c) => ({ c, problem: await runOnce(c) })));
-  const failures = results.filter((r) => r.problem), lines = results.map((r) => `${r.problem ? "❌" : "✅"} ${r.problem ?? r.c.name}`);
+  const failures = results.filter((r) => r.problem), lines = results.map((r) => `${r.problem ? "❌" : "✅"} ${r.problem ? r.problem.text : r.c.name}`);
   console.log(lines.join("\n"));
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Site checks\n\n${lines.map((l) => `- ${l}`).join("\n")}\n`);
-  if (outFile) writeFileSync(outFile, JSON.stringify({ failed: failures.length, critical: failures.some((f) => f.c.critical), problems: failures.map((f) => f.problem) }, null, 2));
+  if (outFile) writeFileSync(outFile, JSON.stringify({ failed: failures.length, critical: failures.some((f) => f.problem.evidence), problems: failures.map((f) => f.problem.text) }, null, 2));
   process.exit(failures.length ? 1 : 0);
 }
