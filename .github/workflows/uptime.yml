@@ -25,6 +25,9 @@ jobs:
       PORTAL_URL: ${{ vars.PORTAL_URL }}
       LANDING_MARKER: ${{ vars.LANDING_MARKER }}
       ALLOWED_SCRIPT_HOSTS: ${{ vars.ALLOWED_SCRIPT_HOSTS }}
+      CHECK_APEX: ${{ vars.CHECK_APEX }}
+      APEX_URL: ${{ vars.APEX_URL }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

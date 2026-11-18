@@ -37,7 +37,8 @@ You enter every secret yourself. Never paste one into a chat or an email.
 | --- | --- | --- |
 | Secret | `PORTAL_CRON_SECRET` | the same value as the portal's `CRON_SECRET` |
 | Secret (optional) | `ALERT_WEBHOOK_URL` | a GoHighLevel/Zapier/Slack inbound webhook that texts or messages you |
-| Variable (only if different) | `LANDING_URL`, `PORTAL_URL` | your real addresses; the defaults are `https://smallbuisnessdebtrecovery.com` and `https://portal.smallbuisnessdebtrecovery.com` |
+| Variable (only if different) | `LANDING_URL`, `PORTAL_URL` | your real addresses; the defaults are `https://www.smallbuisnessdebtrecovery.com` and `https://portal.smallbuisnessdebtrecovery.com` |
+| Variable (once the bare domain works) | `CHECK_APEX` | set to `true` to also check `smallbuisnessdebtrecovery.com` (no www); see below |
 
 Then **Actions → Uptime and security checks → Run workflow** once, and check it goes green. Do the same for **Portal scheduled jobs**.
 
@@ -52,6 +53,16 @@ Set the alert contacts to email **and** SMS or the phone app.
 
 **6. Test the security alarm.** After setup, make 6 wrong sign-in attempts each for 4 different made-up email addresses (24 in all; each address is rate limited after 6) and within 10 minutes you should get a "[SECURITY]" email. These are logged as real failed sign-ins, so tell your team first. If not, open **Actions → Portal scheduled jobs** and read the run: it tells you what's missing.
 
+## The bare domain (no www)
+
+On the first test run the monitor found that **`smallbuisnessdebtrecovery.com` (without www) isn't connected**: Railway shows its DNS records as missing, so that address doesn't load for anyone, while `www.` and the portal do. Fix it at the company where you registered the domain:
+
+1. **Ownership record:** add a **TXT** record named `_railway-verify` with the value Railway shows for the domain (Railway → landing service → Settings → Networking → the domain).
+2. **Traffic record:** point the bare domain (`@`) at the address Railway shows. Most registrars don't allow a normal CNAME at the bare domain; use their **ALIAS / ANAME / CNAME flattening** option if they have one. If they don't, set up **domain forwarding** (a permanent 301 redirect) from `smallbuisnessdebtrecovery.com` to `https://www.smallbuisnessdebtrecovery.com`.
+3. When it loads in a browser, add the GitHub variable `CHECK_APEX` = `true` so the monitor watches it too.
+
+Until then the monitor checks the `www` address, so this known gap doesn't keep raising alarms.
+
 ## When an alarm goes off
 
 **"Website or portal check failing" (not marked possible security problem)**
@@ -60,7 +71,7 @@ Set the alert contacts to email **and** SMS or the phone app.
 3. If the portal says it can't reach its database, check status.supabase.com and your Supabase project.
 4. Certificate warnings: in Railway, check the custom domain shows a valid certificate; renewals normally happen by themselves.
 
-**"POSSIBLE SECURITY PROBLEM" (private pages open, security headers missing, strange script or replaced page)**
+**"POSSIBLE SECURITY PROBLEM" (private pages open to the public, security headers missing, a strange script, or a replaced page)**. This label is used only when a page answered and what it showed looked wrong. A site that simply can't be reached is reported as an outage, not a security problem.
 Treat as an incident now:
 1. Roll the service back to the last deployment you trust, or take it offline in Railway.
 2. Change the secrets: Supabase service key, `CRON_SECRET`, `ENQUIRY_INGEST_SECRET`, `RESEND_API_KEY`, and any Zai credentials.
